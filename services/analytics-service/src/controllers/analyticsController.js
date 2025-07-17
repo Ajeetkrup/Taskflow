@@ -1,4 +1,4 @@
-const pool = require('../utils/database');
+const { pool } = require('../utils/database');
 const redisClient = require('../utils/redis');
 
 class AnalyticsController {
@@ -7,7 +7,7 @@ class AnalyticsController {
     try {
       const userId = req.user.id;
       const cacheKey = `analytics:overview:${userId}`;
-      
+
       // Check cache first
       const cached = await redisClient.get(cacheKey);
       if (cached) {
@@ -32,7 +32,7 @@ class AnalyticsController {
       const stats = result.rows[0];
 
       // Calculate completion rate
-      const completionRate = stats.total_tasks > 0 
+      const completionRate = stats.total_tasks > 0
         ? ((stats.completed_tasks / stats.total_tasks) * 100).toFixed(1)
         : 0;
 
@@ -64,7 +64,7 @@ class AnalyticsController {
     try {
       const userId = req.user.id;
       const cacheKey = `analytics:productivity:${userId}`;
-      
+
       const cached = await redisClient.get(cacheKey);
       if (cached) {
         return res.json(JSON.parse(cached));
@@ -84,14 +84,14 @@ class AnalyticsController {
       `;
 
       const result = await pool.query(query, [userId]);
-      
+
       const productivity = {
         daily_stats: result.rows.map(row => ({
           date: row.date.toISOString().split('T')[0],
           tasks_created: parseInt(row.tasks_created),
           tasks_completed: parseInt(row.tasks_completed)
         })),
-        avg_daily_completion: result.rows.length > 0 
+        avg_daily_completion: result.rows.length > 0
           ? (result.rows.reduce((sum, row) => sum + parseInt(row.tasks_completed), 0) / result.rows.length).toFixed(1)
           : 0
       };
@@ -111,7 +111,7 @@ class AnalyticsController {
     try {
       const userId = req.user.id;
       const cacheKey = `analytics:categories:${userId}`;
-      
+
       const cached = await redisClient.get(cacheKey);
       if (cached) {
         return res.json(JSON.parse(cached));
@@ -131,14 +131,14 @@ class AnalyticsController {
       `;
 
       const result = await pool.query(query, [userId]);
-      
+
       const categoryStats = result.rows.map(row => ({
         category: row.category,
         total_tasks: parseInt(row.total_tasks),
         completed_tasks: parseInt(row.completed_tasks),
         pending_tasks: parseInt(row.pending_tasks),
         in_progress_tasks: parseInt(row.in_progress_tasks),
-        completion_rate: row.total_tasks > 0 
+        completion_rate: row.total_tasks > 0
           ? ((row.completed_tasks / row.total_tasks) * 100).toFixed(1)
           : 0
       }));
@@ -159,7 +159,7 @@ class AnalyticsController {
       const userId = req.user.id;
       const { period = '7d' } = req.query;
       const cacheKey = `analytics:trends:${userId}:${period}`;
-      
+
       const cached = await redisClient.get(cacheKey);
       if (cached) {
         return res.json(JSON.parse(cached));
@@ -167,7 +167,7 @@ class AnalyticsController {
 
       let interval = '7 days';
       let dateFormat = 'day';
-      
+
       if (period === '30d') {
         interval = '30 days';
         dateFormat = 'day';
@@ -189,7 +189,7 @@ class AnalyticsController {
       `;
 
       const result = await pool.query(query, [userId]);
-      
+
       const trends = {
         period: period,
         data: result.rows.map(row => ({
@@ -205,6 +205,91 @@ class AnalyticsController {
     } catch (error) {
       console.error('Error fetching trends:', error);
       res.status(500).json({ error: 'Failed to fetch task trends' });
+    }
+  }
+
+  // Clear specific cache
+  async clearCache(req, res) {
+    try {
+      const userId = req.user.id;
+      const { type } = req.query; // overview, productivity, categories, trends
+
+      let cacheKey;
+
+      if (type === 'overview') {
+        cacheKey = `analytics:overview:${userId}`;
+      } else if (type === 'productivity') {
+        cacheKey = `analytics:productivity:${userId}`;
+      } else if (type === 'categories') {
+        cacheKey = `analytics:categories:${userId}`;
+      } else if (type === 'trends') {
+        // Clear all trend variations
+        const trendKeys = [
+          `analytics:trends:${userId}:7d`,
+          `analytics:trends:${userId}:30d`,
+          `analytics:trends:${userId}:90d`
+        ];
+
+        for (const key of trendKeys) {
+          await redisClient.del(key);
+        }
+
+        return res.json({ message: 'Trends cache cleared successfully' });
+      } else {
+        // Clear all analytics cache for user
+        const patterns = [
+          `analytics:overview:${userId}`,
+          `analytics:productivity:${userId}`,
+          `analytics:categories:${userId}`,
+          `analytics:trends:${userId}:7d`,
+          `analytics:trends:${userId}:30d`,
+          `analytics:trends:${userId}:90d`
+        ];
+
+        for (const key of patterns) {
+          await redisClient.del(key);
+        }
+
+        return res.json({ message: 'All analytics cache cleared successfully' });
+      }
+
+      await redisClient.del(cacheKey);
+      res.json({ message: `${type} cache cleared successfully` });
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      res.status(500).json({ error: 'Failed to clear cache' });
+    }
+  }
+
+  // Get cache status
+  async getCacheStatus(req, res) {
+    try {
+      const userId = req.user.id;
+
+      const cacheKeys = [
+        `analytics:overview:${userId}`,
+        `analytics:productivity:${userId}`,
+        `analytics:categories:${userId}`,
+        `analytics:trends:${userId}:7d`,
+        `analytics:trends:${userId}:30d`,
+        `analytics:trends:${userId}:90d`
+      ];
+
+      const cacheStatus = {};
+
+      for (const key of cacheKeys) {
+        const cached = await redisClient.get(key);
+        const keyName = key.split(':')[1] + (key.includes('trends') ? ':' + key.split(':')[3] : '');
+        cacheStatus[keyName] = {
+          exists: !!cached,
+          size: cached ? JSON.stringify(cached).length : 0
+        };
+      }
+
+      res.json(cacheStatus);
+    } catch (error) {
+      console.error('Error getting cache status:', error);
+      res.status(500).json({ error: 'Failed to get cache status' });
     }
   }
 }

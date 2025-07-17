@@ -1,5 +1,5 @@
 const Task = require('../models/Task');
-const { redisClient } = require('../utils/redis');
+const { client, getSession, setSession, deleteSession } = require('../utils/redis');
 
 const taskController = {
   // Get all tasks for user
@@ -8,16 +8,16 @@ const taskController = {
       const userId = req.user.id;
       const cacheKey = `user:${userId}:tasks`;
       
-      // Check cache first
-      const cachedTasks = await redisClient.get(cacheKey);
+      // Check cache first using helper function
+      const cachedTasks = await getSession(cacheKey);
       if (cachedTasks) {
-        return res.json(JSON.parse(cachedTasks));
+        return res.json(cachedTasks);
       }
-
+      
       const tasks = await Task.findByUserId(userId);
       
-      // Cache for 5 minutes
-      await redisClient.setex(cacheKey, 300, JSON.stringify(tasks));
+      // Cache for 5 minutes using helper function
+      await setSession(cacheKey, tasks, 300);
       
       res.json(tasks);
     } catch (error) {
@@ -33,7 +33,6 @@ const taskController = {
       const userId = req.user.id;
       
       const task = await Task.findById(id, userId);
-      
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
@@ -51,8 +50,8 @@ const taskController = {
       const userId = req.user.id;
       const task = await Task.create(userId, req.body);
       
-      // Clear cache
-      await redisClient.del(`user:${userId}:tasks`);
+      // Clear cache using helper function
+      await deleteSession(`user:${userId}:tasks`);
       
       res.status(201).json(task);
     } catch (error) {
@@ -68,13 +67,12 @@ const taskController = {
       const userId = req.user.id;
       
       const task = await Task.update(id, userId, req.body);
-      
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
       
-      // Clear cache
-      await redisClient.del(`user:${userId}:tasks`);
+      // Clear cache using helper function
+      await deleteSession(`user:${userId}:tasks`);
       
       res.json(task);
     } catch (error) {
@@ -90,13 +88,12 @@ const taskController = {
       const userId = req.user.id;
       
       const task = await Task.delete(id, userId);
-      
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }
       
-      // Clear cache
-      await redisClient.del(`user:${userId}:tasks`);
+      // Clear cache using helper function
+      await deleteSession(`user:${userId}:tasks`);
       
       res.json({ message: 'Task deleted successfully' });
     } catch (error) {

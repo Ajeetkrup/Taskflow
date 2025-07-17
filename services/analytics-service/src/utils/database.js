@@ -11,13 +11,53 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-// Test connection
-pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
+const connectDB = async () => {
+  try {
+    // Test connection
+    await pool.query('SELECT NOW()');
+    console.log('✅ Connected to PostgreSQL database');
+
+    // Set up error handling
+    pool.on('error', (err) => {
+      console.error('❌ Database connection error:', err);
+    });
+
+  } catch (error) {
+    console.error('❌ Failed to connect to database:', error);
+    throw error;
+  }
+};
+
+const getDB = () => {
+  if (!pool) {
+    throw new Error('Database not connected. Call connectDB() first.');
+  }
+  return pool;
+};
+
+const closeDB = async () => {
+  if (pool) {
+    await pool.end();
+    console.log('🔌 Database connection closed');
+  }
+};
+
+// Graceful shutdown handling
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Received SIGINT, shutting down gracefully...');
+  await closeDB();
+  process.exit(0);
 });
 
-pool.on('error', (err) => {
-  console.error('Database connection error:', err);
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+  await closeDB();
+  process.exit(0);
 });
 
-module.exports = pool;
+module.exports = {
+  connectDB,
+  getDB,
+  closeDB,
+  pool
+};

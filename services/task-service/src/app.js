@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const taskRoutes = require('./routes/taskRoutes');
 const { connectDB } = require('./utils/database');
+const { connectRedis } = require('./utils/redis');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -38,6 +39,7 @@ app.use((req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await connectRedis();
     app.listen(PORT, () => {
       console.log(`Task service running on port ${PORT}`);
     });
