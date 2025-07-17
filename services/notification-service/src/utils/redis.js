@@ -14,6 +14,19 @@ client.on('error', (err) => {
   logger.error('Redis connection error:', err);
 });
 
-client.connect();
+// Function to connect to Redis
+async function connectRedis() {
+  try {
+    await client.connect();
+    logger.info('Redis connection established');
+    return client;
+  } catch (error) {
+    logger.error('Failed to connect to Redis:', error);
+    throw error;
+  }
+}
 
-module.exports = client;
+module.exports = {
+  client,
+  connectRedis
+};

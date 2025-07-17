@@ -1,37 +1,51 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const notificationRoutes = require('./routes/notificationRoutes');
 const schedulerService = require('./services/schedulerService');
+const { connectDB } = require('./utils/database');
+const { connectRedis } = require('./utils/redis');
 const logger = require('./utils/logger');
 
 const app = express();
+const PORT = process.env.PORT || 3004;
 
-// Middleware
+// Security middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
 
-// Routes
-app.use('/api/notifications', notificationRoutes);
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
 
-// Health check
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.status(200).json({
+    status: 'healthy',
     service: 'notification-service',
     timestamp: new Date().toISOString()
   });
 });
 
+// Routes
+app.use('/api/notifications', notificationRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error('Unhandled error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  res.status(500).json({
+    error: 'Something went wrong!',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
@@ -40,13 +54,25 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 3004;
+// Start server
+async function startServer() {
+  try {
+    await connectDB();
+    await connectRedis();
+    
+    app.listen(PORT, () => {
+      logger.info(`Notification Service running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      // Initialize scheduler after server starts
+      schedulerService.initialize();
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
 
-app.listen(PORT, () => {
-  logger.info(`Notification service running on port ${PORT}`);
-  
-  // Initialize scheduler
-  schedulerService.initialize();
-});
+startServer();
 
 module.exports = app;
