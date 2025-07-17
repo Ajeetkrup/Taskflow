@@ -2,12 +2,24 @@ import axios from 'axios';
 
 // Base configurations for different services
 const API_CONFIGS = {
+  auth: {
+    baseURL: import.meta.env.REACT_APP_AUTH_SERVICE_URL || 'http://localhost:3001',
+    timeout: 10000,
+  },
   user: {
-    baseURL: process.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:3001',
+    baseURL: import.meta.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:3001',
     timeout: 10000,
   },
   task: {
-    baseURL: process.env.REACT_APP_TASK_SERVICE_URL || 'http://localhost:3002',
+    baseURL: import.meta.env.REACT_APP_TASK_SERVICE_URL || 'http://localhost:3002',
+    timeout: 10000,
+  },
+  analytics: {
+    baseURL: import.meta.env.REACT_APP_ANALYTICS_SERVICE_URL || 'http://localhost:3003',
+    timeout: 10000,
+  },
+  notification: {
+    baseURL: import.meta.env.REACT_APP_NOTIFICATION_SERVICE_URL || 'http://localhost:3004',
     timeout: 10000,
   },
   // Add more services as needed
@@ -45,8 +57,11 @@ const createApiClient = (service) => {
 };
 
 // Export individual service clients
+export const authApiClient = createApiClient('auth');
 export const userApiClient = createApiClient('user');
 export const taskApiClient = createApiClient('task');
+export const analyticsApiClient = createApiClient('analytics');
+export const notificationApiClient = createApiClient('notification');
 
 // Default export (for backward compatibility)
-export const apiClient = userApiClient;
+export default authApiClient;

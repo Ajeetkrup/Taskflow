@@ -7,16 +7,11 @@
 }
 
 .page-content {
-  display: flex;
   gap: 30px;
 }
 
-.main-content {
-  flex: 1;
-}
-
 .sidebar {
-  width: 300px;
+  margin-top: 3rem;
 }
 
 .task-list {

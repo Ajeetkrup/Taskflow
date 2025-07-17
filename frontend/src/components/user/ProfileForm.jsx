@@ -6,7 +6,8 @@ import { validateForm, validateEmail, validateName } from '../../utils/validatio
 
 const ProfileForm = ({ user, onSubmit, loading }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: ''
   });
   const [errors, setErrors] = useState({});
@@ -14,7 +15,8 @@ const ProfileForm = ({ user, onSubmit, loading }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || ''
       });
     }
@@ -39,7 +41,12 @@ const ProfileForm = ({ user, onSubmit, loading }) => {
     e.preventDefault();
     
     const validationRules = {
-      name: {
+      firstName: {
+        required: true,
+        validate: validateName,
+        message: 'Name must be at least 2 characters'
+      },
+      lastName: {
         required: true,
         validate: validateName,
         message: 'Name must be at least 2 characters'
@@ -64,13 +71,24 @@ const ProfileForm = ({ user, onSubmit, loading }) => {
   return (
     <form onSubmit={handleSubmit} className="profile-form">
       <Input
-        label="Full Name"
+        label="First Name"
         type="text"
-        name="name"
-        value={formData.name}
+        name="firstName"
+        value={formData.firstName}
         onChange={handleChange}
-        error={errors.name}
-        placeholder="Enter your full name"
+        error={errors.firstName}
+        placeholder="Enter your first name"
+        required
+      />
+
+      <Input
+        label="Second Name"
+        type="text"
+        name="lastName"
+        value={formData.lastName}
+        onChange={handleChange}
+        error={errors.lastName}
+        placeholder="Enter your second name"
         required
       />
       
@@ -83,6 +101,7 @@ const ProfileForm = ({ user, onSubmit, loading }) => {
         error={errors.email}
         placeholder="Enter your email"
         required
+        disabled={true}
       />
       
       <Button

@@ -5,17 +5,29 @@ import Modal from '../common/Modal';
 import Button from '../common/Button';
 import Loader from '../common/Loader';
 import { taskService } from '../../services/taskService';
+import NotificationPopover from '../common/NotificationPopover';
+import { INITIALNOTIFICATION, MESSAGES } from '../../utils/constants';
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [filter, setFilter] = useState('all');
-
+  const [notification, setNotification] = useState({ ...INITIALNOTIFICATION });
+  console.log("notification -- ", notification)
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const resetNotification = () => {
+    setNotification({ ...INITIALNOTIFICATION })
+  }
+
+  const setNotificationFn = (message = "", status = "") => {
+    const notObj = { message, status }
+    setNotification({ ...notObj })
+  }
 
   const fetchTasks = async () => {
     try {
@@ -32,21 +44,37 @@ const TaskList = () => {
   const handleCreateTask = async (taskData) => {
     try {
       await taskService.createTask(taskData);
-      setShowModal(false);
+      setShowAddTask(false);
       fetchTasks();
+      setNotificationFn(MESSAGES.SUCCESS.TASK_CREATE, "success")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     } catch (error) {
       console.error('Error creating task:', error);
+      setNotificationFn('Error creating task', "error")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     }
   };
 
   const handleUpdateTask = async (taskData) => {
     try {
       await taskService.updateTask(editingTask.id, taskData);
-      setShowModal(false);
+      setShowAddTask(false);
       setEditingTask(null);
       fetchTasks();
+      setNotificationFn(MESSAGES.SUCCESS.TASK_UPDATE, "success")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     } catch (error) {
       console.error('Error updating task:', error);
+      setNotificationFn('Error updating task', "error")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     }
   };
 
@@ -55,29 +83,50 @@ const TaskList = () => {
       try {
         await taskService.deleteTask(taskId);
         fetchTasks();
+        setNotificationFn(MESSAGES.SUCCESS.TASK_DELETE, "success")
+        setTimeout(() => {
+          resetNotification()
+        }, 2 * 1000);
       } catch (error) {
         console.error('Error deleting task:', error);
+        setNotificationFn('Error deleting task', "error")
+        setTimeout(() => {
+          resetNotification()
+        }, 2 * 1000);
       }
     }
   };
 
   const handleToggleStatus = async (task) => {
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+    const id = task.id;
+    delete task.id;
+    delete task.user_id;
+    delete task.created_at;
+    delete task.updated_at;
     try {
-      await taskService.updateTask(task.id, { ...task, status: newStatus });
+      await taskService.updateTask(id, { ...task, status: newStatus });
       fetchTasks();
+      setNotificationFn(MESSAGES.SUCCESS.TASK_STATUS, "success")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     } catch (error) {
       console.error('Error updating task status:', error);
+      setNotificationFn('Error updating task status', "error")
+      setTimeout(() => {
+        resetNotification()
+      }, 2 * 1000);
     }
   };
 
   const handleEdit = (task) => {
     setEditingTask(task);
-    setShowModal(true);
+    setShowAddTask(true);
   };
 
   const handleModalClose = () => {
-    setShowModal(false);
+    setShowAddTask(false);
     setEditingTask(null);
   };
 
@@ -95,70 +144,65 @@ const TaskList = () => {
 
   return (
     <div className="task-list">
-      <div className="task-header">
+      <NotificationPopover key={notification?.message} message={notification?.message} status={notification?.status} />
+      {showAddTask ? <TaskForm
+        task={editingTask}
+        onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
+        onCancel={handleModalClose}
+      /> : <><div className="task-header">
         <h2>My Tasks</h2>
         <Button
           variant="primary"
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowAddTask(true)}
         >
           Add Task
         </Button>
       </div>
 
-      <div className="task-filters">
-        <button
-          className={filter === 'all' ? 'active' : ''}
-          onClick={() => setFilter('all')}
-        >
-          All ({tasks.length})
-        </button>
-        <button
-          className={filter === 'pending' ? 'active' : ''}
-          onClick={() => setFilter('pending')}
-        >
-          Pending ({tasks.filter(t => t.status === 'pending').length})
-        </button>
-        <button
-          className={filter === 'completed' ? 'active' : ''}
-          onClick={() => setFilter('completed')}
-        >
-          Completed ({tasks.filter(t => t.status === 'completed').length})
-        </button>
-        <button
-          className={filter === 'overdue' ? 'active' : ''}
-          onClick={() => setFilter('overdue')}
-        >
-          Overdue ({tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed').length})
-        </button>
-      </div>
+        <div className="task-filters">
+          <button
+            className={filter === 'all' ? 'active' : ''}
+            onClick={() => setFilter('all')}
+          >
+            All ({tasks.length})
+          </button>
+          <button
+            className={filter === 'pending' ? 'active' : ''}
+            onClick={() => setFilter('pending')}
+          >
+            Pending ({tasks.filter(t => t.status === 'pending').length})
+          </button>
+          <button
+            className={filter === 'completed' ? 'active' : ''}
+            onClick={() => setFilter('completed')}
+          >
+            Completed ({tasks.filter(t => t.status === 'completed').length})
+          </button>
+          <button
+            className={filter === 'overdue' ? 'active' : ''}
+            onClick={() => setFilter('overdue')}
+          >
+            Overdue ({tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed').length})
+          </button>
+        </div>
 
-      <div className="tasks-container">
-        {filteredTasks.length === 0 ? (
-          <div className="no-tasks">
-            <p>No tasks found. Create your first task!</p>
-          </div>
-        ) : (
-          filteredTasks.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onEdit={handleEdit}
-              onDelete={handleDeleteTask}
-              onToggleStatus={handleToggleStatus}
-            />
-          ))
-        )}
-      </div>
-
-      {showModal && (
-        <Modal onClose={handleModalClose}>
-          <TaskForm
-            task={editingTask}
-            onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
-            onCancel={handleModalClose}
-          />
-        </Modal>
-      )}
+        <div className="tasks-container">
+          {filteredTasks.length === 0 ? (
+            <div className="no-tasks">
+              <p>No tasks found. Create your first task!</p>
+            </div>
+          ) : (
+            filteredTasks.map(task => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onEdit={handleEdit}
+                onDelete={handleDeleteTask}
+                onToggleStatus={handleToggleStatus}
+              />
+            ))
+          )}
+        </div></>}
     </div>
   );
 };

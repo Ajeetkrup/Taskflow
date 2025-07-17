@@ -1,7 +1,7 @@
 import React from 'react';
 import Navigation from '../components/common/Navigation';
 import TaskStats from '../components/tasks/TaskStats';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
 const DashboardPage = () => {
@@ -9,10 +9,9 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard-page">
-      <Navigation />
       <div className="dashboard-content">
         <div className="dashboard-header">
-          <h1>Welcome back, {user?.name}!</h1>
+          <h1>Welcome back, {user?.firstName + " " + user?.lastName}!</h1>
           <p>Here's your task overview</p>
         </div>
         

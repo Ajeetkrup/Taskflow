@@ -1,7 +1,7 @@
 // File: src/components/user/UserDashboard.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import Button from '../common/Button';
 
 const UserDashboard = () => {

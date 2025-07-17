@@ -65,8 +65,10 @@ const taskController = {
     try {
       const { id } = req.params;
       const userId = req.user.id;
+      console.log("1")
       
       const task = await Task.update(id, userId, req.body);
+      console.log("2", task)
       if (!task) {
         return res.status(404).json({ error: 'Task not found' });
       }

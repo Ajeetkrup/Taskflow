@@ -1,23 +1,23 @@
-import apiClient from './apiClient';
+import { analyticsApiClient } from './apiClient';
 
 class AnalyticsService {
   async getOverview() {
-    const response = await apiClient.get('/analytics/overview');
+    const response = await analyticsApiClient.get('/api/analytics/overview');
     return response.data;
   }
 
   async getProductivity() {
-    const response = await apiClient.get('/analytics/productivity');
+    const response = await analyticsApiClient.get('/api/analytics/productivity');
     return response.data;
   }
 
   async getCategoryStats() {
-    const response = await apiClient.get('/analytics/categories');
+    const response = await analyticsApiClient.get('/api/analytics/categories');
     return response.data;
   }
 
   async getTrends(period = '7d') {
-    const response = await apiClient.get(`/analytics/trends?period=${period}`);
+    const response = await analyticsApiClient.get(`/api/analytics/trends?period=${period}`);
     return response.data;
   }
 }

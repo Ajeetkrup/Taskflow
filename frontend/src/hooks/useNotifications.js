@@ -11,7 +11,7 @@ export const useNotifications = () => {
     setLoading(true);
     try {
       const response = await notificationService.getNotifications();
-      setNotifications(response.data);
+      setNotifications(response.data?.notifications);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -22,7 +22,12 @@ export const useNotifications = () => {
   const fetchPreferences = async () => {
     try {
       const response = await notificationService.getPreferences();
-      setPreferences(response.data);
+      setPreferences({
+        emailEnabled: response?.data?.email_enabled,
+        dueDateReminder: response?.data?.due_date_reminder,
+        reminderMinutes: response?.data?.reminder_minutes,
+        dailySummary: response?.data?.daily_summary
+      });
     } catch (err) {
       setError(err.message);
     }
@@ -31,7 +36,7 @@ export const useNotifications = () => {
   const markAsRead = async (id) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === id ? { ...n, is_read: true } : n
       ));
     } catch (err) {

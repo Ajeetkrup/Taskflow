@@ -1,7 +1,7 @@
 // File: src/pages/ProfilePage.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/userService';
 import ProfileForm from '../components/user/ProfileForm';
 import PasswordForm from '../components/user/PasswordForm';
@@ -20,8 +20,9 @@ const ProfilePage = () => {
     try {
       setLoading(true);
       setMessage('');
+      delete profileData.email;
       const updatedUser = await userService.updateProfile(profileData);
-      setUser(updatedUser);
+      setUser(updatedUser?.user);
       setMessage('Profile updated successfully!');
     } catch (err) {
       setMessage(err.response?.data?.message || 'Failed to update profile.');

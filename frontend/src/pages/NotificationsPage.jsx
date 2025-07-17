@@ -18,6 +18,8 @@ const NotificationsPage = () => {
   if (loading) return <Loader />;
   if (error) return <div className="error">Error: {error}</div>;
 
+  console.log("updatePreferences -- ", preferences) 
+
   return (
     <div className="notifications-page">
       <div className="page-header">

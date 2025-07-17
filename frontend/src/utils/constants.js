@@ -19,7 +19,11 @@ export const MESSAGES = {
     LOGIN: 'Login successful!',
     REGISTER: 'Registration successful!',
     PROFILE_UPDATE: 'Profile updated successfully!',
-    PASSWORD_UPDATE: 'Password updated successfully!'
+    PASSWORD_UPDATE: 'Password updated successfully!',
+    TASK_CREATE: 'Task created successfully!',
+    TASK_UPDATE: 'Task updated successfully!',
+    TASK_DELETE: 'Task deleted successfully!',
+    TASK_STATUS: 'Task status changed successfully!'
   },
   ERROR: {
     GENERIC: 'Something went wrong. Please try again.',
@@ -27,3 +31,8 @@ export const MESSAGES = {
     VALIDATION: 'Please check your input and try again.'
   }
 };
+
+export const INITIALNOTIFICATION = {
+  message:"",
+  status: ""
+}

@@ -1,5 +1,5 @@
 // File: src/utils/storage.js
-const TOKEN_KEY = 'taskflow_token';
+const TOKEN_KEY = 'authToken';
 
 export const setStoredToken = (token) => {
   localStorage.setItem(TOKEN_KEY, token);

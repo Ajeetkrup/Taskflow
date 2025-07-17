@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 
 const NotificationPreferences = ({ preferences, onUpdate }) => {
   const [settings, setSettings] = useState(preferences || {
-    email_enabled: true,
-    due_date_reminder: true,
-    reminder_minutes: 60,
-    daily_summary: false
+    emailEnabled: true,
+    dueDateReminder: true,
+    reminderMinutes: 60,
+    dailySummary: false
   });
 
   const handleChange = (field, value) => {
@@ -14,6 +14,7 @@ const NotificationPreferences = ({ preferences, onUpdate }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("settings inside submit -- ", settings)
     onUpdate(settings);
   };
 
@@ -25,8 +26,8 @@ const NotificationPreferences = ({ preferences, onUpdate }) => {
         <label>
           <input
             type="checkbox"
-            checked={settings.email_enabled}
-            onChange={(e) => handleChange('email_enabled', e.target.checked)}
+            checked={settings.emailEnabled}
+            onChange={(e) => handleChange('emailEnabled', e.target.checked)}
           />
           Email notifications
         </label>
@@ -36,8 +37,8 @@ const NotificationPreferences = ({ preferences, onUpdate }) => {
         <label>
           <input
             type="checkbox"
-            checked={settings.due_date_reminder}
-            onChange={(e) => handleChange('due_date_reminder', e.target.checked)}
+            checked={settings.dueDateReminder}
+            onChange={(e) => handleChange('dueDateReminder', e.target.checked)}
           />
           Due date reminders
         </label>
@@ -47,8 +48,8 @@ const NotificationPreferences = ({ preferences, onUpdate }) => {
         <label>
           Reminder time (minutes before due date):
           <select
-            value={settings.reminder_minutes}
-            onChange={(e) => handleChange('reminder_minutes', parseInt(e.target.value))}
+            value={settings.reminderMinutes}
+            onChange={(e) => handleChange('reminderMinutes', parseInt(e.target.value))}
           >
             <option value={15}>15 minutes</option>
             <option value={30}>30 minutes</option>
@@ -63,8 +64,8 @@ const NotificationPreferences = ({ preferences, onUpdate }) => {
         <label>
           <input
             type="checkbox"
-            checked={settings.daily_summary}
-            onChange={(e) => handleChange('daily_summary', e.target.checked)}
+            checked={settings.dailySummary}
+            onChange={(e) => handleChange('dailySummary', e.target.checked)}
           />
           Daily summary emails
         </label>
