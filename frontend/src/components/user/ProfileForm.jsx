@@ -81,13 +81,13 @@ const ProfileForm = ({ user, onSubmit, loading }) => {
       />
 
       <Input
-        label="Second Name"
+        label="Last Name"
         type="text"
         name="lastName"
         value={formData.lastName}
         onChange={handleChange}
         error={errors.lastName}
-        placeholder="Enter your second name"
+        placeholder="Enter your last name"
         required
       />
       
