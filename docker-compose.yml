@@ -1,28 +1,135 @@
+# docker-compose.yml
 version: '3.8'
 
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: postgres-db
-    restart: unless-stopped
     environment:
+      POSTGRES_DB: taskflow
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - taskflow-network
 
   redis:
-    image: redis:7.0-alpine
-    container_name: redis-server
-    restart: unless-stopped
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - taskflow-network
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_NAME=taskflow
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - API_VERSION=v1
+      - API_PREFIX=/api
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - taskflow-network
+
+  task-service:
+    build: ./services/task-service
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_NAME=taskflow
+      - DB_USER=myuser
+      - DB_PASSWORD=mypassword
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - taskflow-network
+
+  analytics-service:
+    build: ./services/analytics-service
+    ports:
+      - "3003:3000"
+    environment:
+    - PORT=3000
+    - DB_HOST=localhost
+    - DB_PORT=5432
+    - DB_NAME=taskflow
+    - DB_USER=myuser
+    - DB_PASSWORD=mypassword
+    - REDIS_HOST=localhost
+    - REDIS_PORT=6379
+    - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+    - NODE_ENV=development
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - taskflow-network
+
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "3004:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=taskflow
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-secret-key
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - taskflow-network
+
+  frontend:
+    build: ./frontend/taskflow-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - task-service
+      - analytics-service
+      - notification-service
+    networks:
+      - taskflow-network
 
 volumes:
   postgres_data:
   redis_data:
 
+networks:
+  taskflow-network:
+    driver: bridge

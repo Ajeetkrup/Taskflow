@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  namespace: taskflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      nodeSelector:
+        layer: "data"
+      tolerations:
+      - key: "layer"
+        operator: "Equal"
+        value: "data"
+        effect: "NoSchedule"
+      containers:
+      - name: postgres
+        image: postgres:17-alpine
+        env:
+        - name: POSTGRES_DB
+          value: taskflow
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        # PostgreSQL optimization for t2.micro
+        - name: POSTGRES_SHARED_BUFFERS
+          value: "64MB"
+        - name: POSTGRES_EFFECTIVE_CACHE_SIZE
+          value: "192MB"
+        - name: POSTGRES_MAX_CONNECTIONS
+          value: "20"
+        - name: POSTGRES_WORK_MEM
+          value: "4MB"
+        - name: POSTGRES_MAINTENANCE_WORK_MEM
+          value: "32MB"
+        - name: POSTGRES_CHECKPOINT_SEGMENTS
+          value: "8"
+        - name: POSTGRES_WAL_BUFFERS
+          value: "2MB"
+        ports:
+        - containerPort: 5432
+        # Resource limits for t2.micro
+        resources:
+          requests:
+            memory: "256Mi"    # Minimum required
+            cpu: "100m"        # 0.1 CPU core
+          limits:
+            memory: "384Mi"    # Maximum allowed
+            cpu: "200m"        # 0.2 CPU core burst
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        # Health checks with longer intervals to save resources
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: taskflow
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  
+  storageClassName: gp2

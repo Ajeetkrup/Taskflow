@@ -1,5 +1,5 @@
 # Multi-stage build for production optimization
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:24-alpine AS production
 
 # Create app directory
 WORKDIR /app
@@ -41,7 +41,7 @@ EXPOSE 3001
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "const http = require('http'); \
-    const options = { hostname: 'localhost', port: 3001, path: '/health', timeout: 2000 }; \
+    const options = { hostname: 'localhost', port: 3002, path: '/health', timeout: 2000 }; \
     const req = http.request(options, (res) => { \
       process.exit(res.statusCode === 200 ? 0 : 1); \
     }); \

@@ -1,4 +1,3 @@
-// File: src/hooks/useApi.js
 import { useState, useEffect } from 'react';
 
 export const useApi = (apiCall, dependencies = []) => {

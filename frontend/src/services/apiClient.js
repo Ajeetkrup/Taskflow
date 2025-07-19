@@ -3,26 +3,25 @@ import axios from 'axios';
 // Base configurations for different services
 const API_CONFIGS = {
   auth: {
-    baseURL: import.meta.env.REACT_APP_AUTH_SERVICE_URL || 'http://localhost:3001',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     timeout: 10000,
   },
   user: {
-    baseURL: import.meta.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:3001',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     timeout: 10000,
   },
   task: {
-    baseURL: import.meta.env.REACT_APP_TASK_SERVICE_URL || 'http://localhost:3002',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     timeout: 10000,
   },
   analytics: {
-    baseURL: import.meta.env.REACT_APP_ANALYTICS_SERVICE_URL || 'http://localhost:3003',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     timeout: 10000,
   },
   notification: {
-    baseURL: import.meta.env.REACT_APP_NOTIFICATION_SERVICE_URL || 'http://localhost:3004',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
     timeout: 10000,
   },
-  // Add more services as needed
 };
 
 // Create axios instances for each service

@@ -1,4 +1,3 @@
-// File: src/components/common/Input.js
 import React from 'react';
 
 const Input = ({ 

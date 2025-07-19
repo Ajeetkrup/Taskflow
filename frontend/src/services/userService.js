@@ -1,4 +1,3 @@
-// File: src/services/userService.js
 import { userApiClient } from './apiClient';
 
 export const userService = {

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: taskflow
+data:
+  # Server Configuration
+  PORT: "3000"
+  NODE_ENV: "production"
+  
+  # Database Configuration 
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "taskflow"
+  
+  # Redis Configuration 
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # API Configuration
+  API_VERSION: "v1"
+  API_PREFIX: "/api"
+
+  # EMAIL CONFIG
+  EMAIL_SERVICE: "gmail"
+  EMAIL_HOST: "smtp.gmail.com"
+  EMAIL_PORT: "587"
+  
+  # SERVICE URLS (Internal K8s service names)
+  TASK_SERVICE_URL: "http://task-service:3000"
+  USER_SERVICE_URL: "http://user-service:3000"

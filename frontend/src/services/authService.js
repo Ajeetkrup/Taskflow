@@ -1,4 +1,3 @@
-// File: src/services/authService.js
 import apiClient from './apiClient';
 import { setStoredToken, clearStoredToken } from '../utils/storage';
 
@@ -11,6 +10,8 @@ export const authService = {
   },
 
   async register(userData) {
+    console.log("                         *************************************");
+    console.log("api base url -- ", import.meta.env.VITE_API_BASE_URL);
     const response = await apiClient.post('/api/auth/register', userData);
     const { token, user } = response.data;
     setStoredToken(token);

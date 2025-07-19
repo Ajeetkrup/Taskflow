@@ -1,29 +1,42 @@
 const redis = require('redis');
 
+// Updated Redis client configuration for newer versions
 const client = redis.createClient({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
+  socket: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+  },
   password: process.env.REDIS_PASSWORD || undefined,
-  db: process.env.REDIS_DB || 0
+  database: parseInt(process.env.REDIS_DB) || 0
 });
+
+console.log('Redis configuration:');
+console.log('REDIS_HOST:', process.env.REDIS_HOST);
+console.log('REDIS_PORT:', process.env.REDIS_PORT);
+console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? '***' : 'not set');
+console.log('REDIS_DB:', process.env.REDIS_DB);
 
 const connectRedis = async () => {
   try {
-    await client.connect();
-    console.log('Connected to Redis');
-    
+    // Set up event listeners before connecting
     client.on('error', (err) => {
       console.error('Redis error:', err);
     });
-    
+
     client.on('connect', () => {
       console.log('Redis client connected');
     });
-    
+
     client.on('ready', () => {
       console.log('Redis client ready');
     });
-    
+
+    client.on('end', () => {
+      console.log('Redis client disconnected');
+    });
+
+    await client.connect();
+    console.log('Connected to Redis');
   } catch (error) {
     console.error('Redis connection failed:', error);
     throw error;
@@ -65,4 +78,4 @@ module.exports = {
   setSession,
   getSession,
   deleteSession
-};  
+};

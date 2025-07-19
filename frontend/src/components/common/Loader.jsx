@@ -1,4 +1,3 @@
-// File: src/components/common/Loader.js
 import React from 'react';
 
 const Loader = ({ size = 'medium', text = 'Loading...' }) => {

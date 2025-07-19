@@ -1,4 +1,3 @@
-// File: src/components/auth/RegisterForm.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button';
@@ -7,7 +6,8 @@ import { validateForm, validateEmail, validatePassword, validateName } from '../
 
 const RegisterForm = ({ onSubmit, loading }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -20,7 +20,7 @@ const RegisterForm = ({ onSubmit, loading }) => {
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -31,9 +31,14 @@ const RegisterForm = ({ onSubmit, loading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     const validationRules = {
-      name: {
+      firstName: {
+        required: true,
+        validate: validateName,
+        message: 'Name must be at least 2 characters'
+      },
+      lastName: {
         required: true,
         validate: validateName,
         message: 'Name must be at least 2 characters'
@@ -51,11 +56,11 @@ const RegisterForm = ({ onSubmit, loading }) => {
     };
 
     const validationErrors = validateForm(formData, validationRules);
-    
+
     if (formData.password !== formData.confirmPassword) {
       validationErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -68,16 +73,27 @@ const RegisterForm = ({ onSubmit, loading }) => {
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       <Input
-        label="Full Name"
+        label="First Name"
         type="text"
-        name="name"
-        value={formData.name}
+        name="firstName"
+        value={formData.firstName}
         onChange={handleChange}
-        error={errors.name}
-        placeholder="Enter your full name"
+        error={errors.firstName}
+        placeholder="Enter your first name"
         required
       />
-      
+
+      <Input
+        label="Second Name"
+        type="text"
+        name="lastName"
+        value={formData.lastName}
+        onChange={handleChange}
+        error={errors.lastName}
+        placeholder="Enter your second name"
+        required
+      />
+
       <Input
         label="Email"
         type="email"
@@ -88,7 +104,7 @@ const RegisterForm = ({ onSubmit, loading }) => {
         placeholder="Enter your email"
         required
       />
-      
+
       <Input
         label="Password"
         type="password"
@@ -99,7 +115,7 @@ const RegisterForm = ({ onSubmit, loading }) => {
         placeholder="Enter your password"
         required
       />
-      
+
       <Input
         label="Confirm Password"
         type="password"
@@ -110,7 +126,7 @@ const RegisterForm = ({ onSubmit, loading }) => {
         placeholder="Confirm your password"
         required
       />
-      
+
       <Button
         type="submit"
         variant="primary"
@@ -120,7 +136,7 @@ const RegisterForm = ({ onSubmit, loading }) => {
       >
         Sign Up
       </Button>
-      
+
       <p className="auth-link">
         Already have an account? <Link to="/login">Sign in</Link>
       </p>

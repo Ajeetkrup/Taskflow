@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: taskflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      # Node placement for application layer
+      nodeSelector:
+        layer: "application"
+      tolerations:
+      - key: "layer"
+        operator: "Equal"
+        value: "application"
+        effect: "NoSchedule"
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --maxmemory
+        - "96mb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        - --save
+        - "300 1"  # Save every 5 minutes if at least 1 key changed
+        - --appendonly
+        - "yes"
+        - --appendfsync
+        - "everysec"
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "64Mi"     # Minimum required
+            cpu: "25m"         # 0.025 CPU core
+          limits:
+            memory: "128Mi"    # Maximum allowed (matches maxmemory setting)
+            cpu: "50m"         # 0.05 CPU core
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: taskflow
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi 
+  storageClassName: gp2
+  

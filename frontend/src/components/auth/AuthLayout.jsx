@@ -1,4 +1,3 @@
-// File: src/components/auth/AuthLayout.js
 import React from 'react';
 
 const AuthLayout = ({ children, title, subtitle }) => {

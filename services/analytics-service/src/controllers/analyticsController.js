@@ -1,5 +1,5 @@
 const { pool } = require('../utils/database');
-const redisClient = require('../utils/redis');
+const { getSession, setSession, deleteSession, client: redisClient } = require('../utils/redis');
 
 class AnalyticsController {
   // Get overall task statistics
@@ -8,10 +8,10 @@ class AnalyticsController {
       const userId = req.user.id;
       const cacheKey = `analytics:overview:${userId}`;
 
-      // Check cache first
-      const cached = await redisClient.get(cacheKey);
+      // Check cache first using helper function
+      const cached = await getSession(cacheKey);
       if (cached) {
-        return res.json(JSON.parse(cached));
+        return res.json(cached);
       }
 
       const query = `
@@ -49,8 +49,8 @@ class AnalyticsController {
         low_priority_tasks: parseInt(stats.low_priority_tasks)
       };
 
-      // Cache for 5 minutes
-      await redisClient.setEx(cacheKey, 300, JSON.stringify(overview));
+      // Cache for 5 minutes using helper function
+      await setSession(cacheKey, overview, 300);
 
       res.json(overview);
     } catch (error) {
@@ -65,9 +65,9 @@ class AnalyticsController {
       const userId = req.user.id;
       const cacheKey = `analytics:productivity:${userId}`;
 
-      const cached = await redisClient.get(cacheKey);
+      const cached = await getSession(cacheKey);
       if (cached) {
-        return res.json(JSON.parse(cached));
+        return res.json(cached);
       }
 
       const query = `
@@ -97,7 +97,7 @@ class AnalyticsController {
       };
 
       // Cache for 10 minutes
-      await redisClient.setEx(cacheKey, 600, JSON.stringify(productivity));
+      await setSession(cacheKey, productivity, 600);
 
       res.json(productivity);
     } catch (error) {
@@ -112,9 +112,9 @@ class AnalyticsController {
       const userId = req.user.id;
       const cacheKey = `analytics:categories:${userId}`;
 
-      const cached = await redisClient.get(cacheKey);
+      const cached = await getSession(cacheKey);
       if (cached) {
-        return res.json(JSON.parse(cached));
+        return res.json(cached);
       }
 
       const query = `
@@ -144,7 +144,7 @@ class AnalyticsController {
       }));
 
       // Cache for 10 minutes
-      await redisClient.setEx(cacheKey, 600, JSON.stringify(categoryStats));
+      await setSession(cacheKey, categoryStats, 600);
 
       res.json(categoryStats);
     } catch (error) {
@@ -160,9 +160,9 @@ class AnalyticsController {
       const { period = '7d' } = req.query;
       const cacheKey = `analytics:trends:${userId}:${period}`;
 
-      const cached = await redisClient.get(cacheKey);
+      const cached = await getSession(cacheKey);
       if (cached) {
-        return res.json(JSON.parse(cached));
+        return res.json(cached);
       }
 
       let interval = '7 days';
@@ -199,7 +199,7 @@ class AnalyticsController {
       };
 
       // Cache for 15 minutes
-      await redisClient.setEx(cacheKey, 900, JSON.stringify(trends));
+      await setSession(cacheKey, trends, 900);
 
       res.json(trends);
     } catch (error) {
@@ -214,14 +214,15 @@ class AnalyticsController {
       const userId = req.user.id;
       const { type } = req.query; // overview, productivity, categories, trends
 
-      let cacheKey;
-
       if (type === 'overview') {
-        cacheKey = `analytics:overview:${userId}`;
+        await deleteSession(`analytics:overview:${userId}`);
+        return res.json({ message: 'Overview cache cleared successfully' });
       } else if (type === 'productivity') {
-        cacheKey = `analytics:productivity:${userId}`;
+        await deleteSession(`analytics:productivity:${userId}`);
+        return res.json({ message: 'Productivity cache cleared successfully' });
       } else if (type === 'categories') {
-        cacheKey = `analytics:categories:${userId}`;
+        await deleteSession(`analytics:categories:${userId}`);
+        return res.json({ message: 'Categories cache cleared successfully' });
       } else if (type === 'trends') {
         // Clear all trend variations
         const trendKeys = [
@@ -231,7 +232,7 @@ class AnalyticsController {
         ];
 
         for (const key of trendKeys) {
-          await redisClient.del(key);
+          await deleteSession(key);
         }
 
         return res.json({ message: 'Trends cache cleared successfully' });
@@ -247,14 +248,11 @@ class AnalyticsController {
         ];
 
         for (const key of patterns) {
-          await redisClient.del(key);
+          await deleteSession(key);
         }
 
         return res.json({ message: 'All analytics cache cleared successfully' });
       }
-
-      await redisClient.del(cacheKey);
-      res.json({ message: `${type} cache cleared successfully` });
     } catch (error) {
       console.error('Error clearing cache:', error);
       res.status(500).json({ error: 'Failed to clear cache' });

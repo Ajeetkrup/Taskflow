@@ -1,4 +1,3 @@
-// File: src/components/common/Modal.js
 import React from 'react';
 
 const Modal = ({ isOpen, onClose, title, children }) => {

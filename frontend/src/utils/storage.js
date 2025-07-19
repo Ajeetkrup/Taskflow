@@ -1,4 +1,3 @@
-// File: src/utils/storage.js
 const TOKEN_KEY = 'authToken';
 
 export const setStoredToken = (token) => {

@@ -1,4 +1,3 @@
-// File: src/components/auth/LoginForm.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../common/Button';

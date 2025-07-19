@@ -1,35 +1,44 @@
 const redis = require('redis');
 
+// Updated Redis client configuration for newer versions
 const client = redis.createClient({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
+  socket: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+  },
   password: process.env.REDIS_PASSWORD || undefined,
-  db: process.env.REDIS_DB || 0
+  database: parseInt(process.env.REDIS_DB) || 0
 });
+
+console.log('Redis configuration:');
+console.log('REDIS_HOST:', process.env.REDIS_HOST);
+console.log('REDIS_PORT:', process.env.REDIS_PORT);
+console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? '***' : 'not set');
+console.log('REDIS_DB:', process.env.REDIS_DB);
 
 const connectRedis = async () => {
   try {
-    await client.connect();
-    console.log('✅ Connected to Redis');
-    
+    // Set up event listeners before connecting
     client.on('error', (err) => {
-      console.error('❌ Redis error:', err);
+      console.error('Redis error:', err);
     });
-    
+
     client.on('connect', () => {
-      console.log('🔄 Redis client connected');
+      console.log('Redis client connected');
     });
-    
+
     client.on('ready', () => {
-      console.log('🚀 Redis client ready');
+      console.log('Redis client ready');
     });
-    
+
     client.on('end', () => {
-      console.log('🔌 Redis connection closed');
+      console.log('Redis client disconnected');
     });
-    
+
+    await client.connect();
+    console.log('Connected to Redis');
   } catch (error) {
-    console.error('❌ Redis connection failed:', error);
+    console.error('Redis connection failed:', error);
     throw error;
   }
 };
@@ -63,76 +72,10 @@ const deleteSession = async (key) => {
   }
 };
 
-// Additional helper functions for your analytics use case
-const get = async (key) => {
-  try {
-    return await client.get(key);
-  } catch (error) {
-    console.error('Error getting key:', error);
-    throw error;
-  }
-};
-
-const set = async (key, value, expireInSeconds = null) => {
-  try {
-    if (expireInSeconds) {
-      await client.setEx(key, expireInSeconds, value);
-    } else {
-      await client.set(key, value);
-    }
-  } catch (error) {
-    console.error('Error setting key:', error);
-    throw error;
-  }
-};
-
-const setEx = async (key, expireInSeconds, value) => {
-  try {
-    await client.setEx(key, expireInSeconds, value);
-  } catch (error) {
-    console.error('Error setting key with expiry:', error);
-    throw error;
-  }
-};
-
-const del = async (key) => {
-  try {
-    await client.del(key);
-  } catch (error) {
-    console.error('Error deleting key:', error);
-    throw error;
-  }
-};
-
-// Graceful shutdown
-const closeRedis = async () => {
-  try {
-    await client.quit();
-    console.log('🔌 Redis connection closed gracefully');
-  } catch (error) {
-    console.error('Error closing Redis connection:', error);
-  }
-};
-
-process.on('SIGINT', async () => {
-  await closeRedis();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await closeRedis();
-  process.exit(0);
-});
-
 module.exports = {
   connectRedis,
   client,
   setSession,
   getSession,
-  deleteSession,
-  get,
-  set,
-  setEx,
-  del,
-  closeRedis
+  deleteSession
 };

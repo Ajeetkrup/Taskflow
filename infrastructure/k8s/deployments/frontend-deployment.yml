@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: taskflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      tolerations:
+      - key: "layer"
+        operator: "Equal"
+        value: "application"
+        effect: "NoSchedule"
+      nodeSelector:
+        layer: "application"
+      containers:
+        - name: frontend
+          image: ajeetkrup1234/taskflow-frontend:latest
+          ports:
+            - containerPort: 80
+          env:
+            # Vite environment variables (build-time)
+            - name: VITE_API_BASE_URL
+              value: "http://a5bfaa3b2e48047f18ccfdad4d8589ed-761cc3edb90c97ea.elb.us-west-2.amazonaws.com/"
+            # Runtime environment variables (if using runtime config)
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5

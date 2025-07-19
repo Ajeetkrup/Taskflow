@@ -18,6 +18,7 @@ import './styles/navigation.css';
 import './styles/notifications.css';
 import './styles/tasks.css';
 import './styles/user.css';
+import { useEffect } from 'react';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
