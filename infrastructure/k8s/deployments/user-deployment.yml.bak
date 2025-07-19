@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+  namespace: taskflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      tolerations:
+      - key: "layer"
+        operator: "Equal"
+        value: "application"
+        effect: "NoSchedule"
+      nodeSelector:
+        layer: "application"
+      containers:
+        - name: user-service
+          image: ajeetkrup1234/taskflow-user-service:latest
+          ports:
+            - containerPort: 3000
+          env:
+            # Server Configuration (from ConfigMap)
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: PORT
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: NODE_ENV
+            # JWT Configuration (from Secret)
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
+            # Database Configuration (Mixed)
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            # Redis Configuration (Mixed)
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_PORT
+            # - name: REDIS_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: app-secrets
+            #       key: REDIS_PASSWORD
+            - name: REDIS_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_DB
+            # API Configuration (from ConfigMap)
+            - name: API_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: API_VERSION
+            - name: API_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: API_PREFIX
+          resources:
+            requests:
+              memory: "64Mi"     # Minimal for basic operation
+              cpu: "50m"         # Very low baseline
+            limits:
+              memory: "128Mi"    # Strict limit
+              cpu: "100m"        # Burst when needed
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5

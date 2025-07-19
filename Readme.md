@@ -1,4 +1,3 @@
-```markdown
 # TaskFlow - Personal Task Management App
 
 A modern, scalable personal task management application built with microservices architecture, featuring real-time updates, analytics, and intelligent notifications.
@@ -312,4 +311,3 @@ For questions, issues, or contributions:
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 Built with ❤️ using modern microservices architecture
-```
