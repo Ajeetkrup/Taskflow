@@ -7,6 +7,18 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      # Redirect requests without trailing slash
+      rewrite ^(/grafana)$ $1/ redirect;
+      rewrite ^(/prometheus)$ $1/ redirect;
+      
+      # Additional headers for Grafana
+      proxy_set_header Accept-Encoding "";
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Forwarded-Server $host;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
     # Enhanced CORS configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "http://a5bfaa3b2e48047f18ccfdad4d8589ed-761cc3edb90c97ea.elb.us-west-2.amazonaws.com, http://taskflow.local"
@@ -18,6 +30,54 @@ spec:
   rules:
     - http:
         paths:
+          # Monitoring/Metrics endpoints (Prometheus scraping via ingress)
+          - path: /metrics/user
+            pathType: Prefix
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 3000
+          - path: /metrics/task
+            pathType: Prefix
+            backend:
+              service:
+                name: task-service
+                port:
+                  number: 3000
+          - path: /metrics/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 3000
+          - path: /metrics/notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 3000
+          
+          # Prometheus with path rewriting
+          - path: /prometheus(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+          
+          # Grafana with path rewriting
+          - path: /grafana(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+          
           # API routes - more specific paths first
           - path: /api/auth
             pathType: Prefix
@@ -54,7 +114,8 @@ spec:
                 name: notification-service
                 port:
                   number: 3000
-          # Frontend routes (should be last to catch all non-API routes)
+          
+          # Frontend routes (last to catch all non-API routes)
           - path: /
             pathType: Prefix
             backend:

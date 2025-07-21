@@ -8,6 +8,8 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { connectDB } = require('./utils/database');
 const { connectRedis } = require('./utils/redis');
+const { register, metricsMiddleware, activeUsersGauge } = require('./utils/metrics');
+const User = require('./models/User');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +29,19 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use(metricsMiddleware);
+
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    res.end(metrics);
+  } catch (error) {
+    console.error('Error generating metrics:', error);
+    res.status(500).end('Error generating metrics');
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
@@ -39,6 +54,17 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+
+app.use(async (req, res, next) => {
+  try {
+    const activeUserCount = await User.getActiveUsersCount();
+    console.log("activeUserCount --", activeUserCount)
+    activeUsersGauge.set(activeUserCount);
+  } catch (error) {
+    console.error('Error updating active users metric:', error);
+  }
+  next();
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

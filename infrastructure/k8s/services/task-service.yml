@@ -3,10 +3,19 @@ kind: Service
 metadata:
   name: task-service
   namespace: taskflow
+  annotations:
+    prometheus.io/scrape: "true"    # Enable Prometheus scraping
+    prometheus.io/port: "3000"      # Port to scrape metrics from
+    prometheus.io/path: "/metrics"  # Path to metrics endpoint
+  labels:
+    app: task-service
+    monitoring: "enabled"           # Label for easy identification
 spec:
   selector:
     app: task-service
   ports:
-    - port: 3000
+    - name: http           # better monitoring
+      port: 3000
       targetPort: 3000
+      protocol: TCP
   type: ClusterIP

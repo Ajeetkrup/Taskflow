@@ -15,24 +15,24 @@ class User {
   // Create a new user
   static async create(userData) {
     const { email, password, firstName, lastName } = userData;
-    
+
     // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
+
     const createUserQuery = `
       INSERT INTO users (email, password, first_name, last_name)
       VALUES ($1, $2, $3, $4)
       RETURNING id, email, first_name, last_name, is_active, created_at, updated_at
     `;
-    
+
     const result = await query(createUserQuery, [
       email,
       hashedPassword,
       firstName,
       lastName
     ]);
-    
+
     return new User(result.rows[0]);
   }
 
@@ -43,13 +43,13 @@ class User {
       FROM users
       WHERE email = $1 AND is_active = true
     `;
-    
+
     const result = await query(findUserQuery, [email]);
-    
+
     if (result.rows.length === 0) {
       return null;
     }
-    
+
     return {
       ...new User(result.rows[0]),
       password: result.rows[0].password // Include password for authentication
@@ -63,33 +63,33 @@ class User {
       FROM users
       WHERE id = $1 AND is_active = true
     `;
-    
+
     const result = await query(findUserQuery, [id]);
-    
+
     if (result.rows.length === 0) {
       return null;
     }
-    
+
     return new User(result.rows[0]);
   }
 
   // Update user profile
   static async updateProfile(id, updateData) {
     const { firstName, lastName } = updateData;
-    
+
     const updateUserQuery = `
       UPDATE users 
       SET first_name = $1, last_name = $2, updated_at = CURRENT_TIMESTAMP
       WHERE id = $3 AND is_active = true
       RETURNING id, email, first_name, last_name, is_active, created_at, updated_at
     `;
-    
+
     const result = await query(updateUserQuery, [firstName, lastName, id]);
-    
+
     if (result.rows.length === 0) {
       return null;
     }
-    
+
     return new User(result.rows[0]);
   }
 
@@ -97,14 +97,14 @@ class User {
   static async updatePassword(id, newPassword) {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-    
+
     const updatePasswordQuery = `
       UPDATE users 
       SET password = $1, updated_at = CURRENT_TIMESTAMP
       WHERE id = $2 AND is_active = true
       RETURNING id
     `;
-    
+
     const result = await query(updatePasswordQuery, [hashedPassword, id]);
     return result.rows.length > 0;
   }
@@ -119,7 +119,7 @@ class User {
     const checkEmailQuery = `
       SELECT id FROM users WHERE email = $1
     `;
-    
+
     const result = await query(checkEmailQuery, [email]);
     return result.rows.length > 0;
   }
@@ -132,9 +132,21 @@ class User {
       WHERE id = $1
       RETURNING id
     `;
-    
+
     const result = await query(deactivateQuery, [id]);
     return result.rows.length > 0;
+  }
+
+  // Get count of all active users
+  static async getActiveUsersCount() {
+    const countQuery = `
+    SELECT COUNT(*) as count
+    FROM users
+    WHERE is_active = true
+  `;
+
+    const result = await query(countQuery);
+    return parseInt(result.rows[0].count, 10);
   }
 
   // Convert to JSON (remove sensitive data)

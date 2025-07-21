@@ -8,6 +8,7 @@ const { connectDB } = require('./utils/database');
 const { connectRedis } = require('./utils/redis');
 const app = express();
 const PORT = process.env.PORT || 3003;
+const { register, metricsMiddleware,} = require('./utils/metrics');
 
 // Security middleware
 app.use(helmet());
@@ -23,6 +24,22 @@ app.use(limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// metrics middleware
+app.use(metricsMiddleware);
+
+
+// metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    res.end(metrics);
+  } catch (error) {
+    console.error('Error generating metrics:', error);
+    res.status(500).end('Error generating metrics');
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
