@@ -9,6 +9,7 @@ const Input = ({
   placeholder,
   required = false,
   className = '',
+  name='',
   ...props 
 }) => {
   const inputClass = `input ${error ? 'input-error' : ''} ${className}`.trim();
@@ -16,7 +17,7 @@ const Input = ({
   return (
     <div className="input-group">
       {label && (
-        <label className="input-label">
+        <label className="input-label" htmlFor={name} aria-label={label}>
           {label}
           {required && <span className="required">*</span>}
         </label>
@@ -27,6 +28,8 @@ const Input = ({
         onChange={onChange}
         placeholder={placeholder}
         className={inputClass}
+        name={name}
+        id={name}
         {...props}
       />
       {error && <span className="input-error-message">{error}</span>}
