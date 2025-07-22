@@ -38,8 +38,8 @@ class AnalyticsController {
 
       const overview = {
         ...stats,
-        completion_rate: parseFloat(completionRate),
-        total_tasks: parseInt(stats.total_tasks),
+        completion_rate: parseFloat(completionRate || 0),
+        total_tasks: parseInt(stats.total_tasks || 0),
         completed_tasks: parseInt(stats.completed_tasks),
         pending_tasks: parseInt(stats.pending_tasks),
         in_progress_tasks: parseInt(stats.in_progress_tasks),
@@ -87,12 +87,12 @@ class AnalyticsController {
 
       const productivity = {
         daily_stats: result.rows.map(row => ({
-          date: row.date.toISOString().split('T')[0],
-          tasks_created: parseInt(row.tasks_created),
-          tasks_completed: parseInt(row.tasks_completed)
+          date: row?.date?.toISOString()?.split('T')[0],
+          tasks_created: parseInt(row?.tasks_created),
+          tasks_completed: parseInt(row?.tasks_completed)
         })),
-        avg_daily_completion: result.rows.length > 0
-          ? (result.rows.reduce((sum, row) => sum + parseInt(row.tasks_completed), 0) / result.rows.length).toFixed(1)
+        avg_daily_completion: result?.rows?.length > 0
+          ? (result.rows.reduce((sum, row) => sum + parseInt(row?.tasks_completed), 0) / result?.rows?.length).toFixed(1)
           : 0
       };
 

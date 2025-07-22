@@ -32,7 +32,7 @@ async function createTables() {
         type VARCHAR(50) NOT NULL,
         title VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
-        scheduled_for TIMESTAMP,
+        scheduled_for TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         sent_at TIMESTAMP,
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

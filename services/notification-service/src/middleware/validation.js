@@ -18,6 +18,7 @@ const validateNotificationPreferences = (req, res, next) => {
 
 const validateNotificationCreate = (req, res, next) => {
   const schema = Joi.object({
+    userId: Joi.number().integer().required(),  
     taskId: Joi.number().integer().positive(),
     type: Joi.string().valid('due_date', 'reminder', 'task_update', 'daily_summary').required(),
     title: Joi.string().max(255).required(),

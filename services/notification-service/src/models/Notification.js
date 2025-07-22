@@ -7,13 +7,24 @@ class Notification {
     try {
       const { userId, taskId, type, title, message, scheduledFor } = notificationData;
 
-      const query = `
-        INSERT INTO notifications (user_id, task_id, type, title, message, scheduled_for)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `;
+      // Build dynamic query based on scheduledFor presence
+      const fields = ['user_id', 'task_id', 'type', 'title', 'message'];
+      const values = [userId, taskId, type, title, message];
+      const placeholders = ['$1', '$2', '$3', '$4', '$5'];
 
-      const result = await db.query(query, [userId, taskId, type, title, message, scheduledFor]);
+      if (scheduledFor) {
+        fields.push('scheduled_for');
+        values.push(scheduledFor);
+        placeholders.push('$6');
+      }
+
+      const query = `
+            INSERT INTO notifications (${fields.join(', ')})
+            VALUES (${placeholders.join(', ')})
+            RETURNING *
+        `;
+
+      const result = await db.query(query, values);
       return result.rows[0];
     } catch (error) {
       logger.error('Error creating notification:', error);

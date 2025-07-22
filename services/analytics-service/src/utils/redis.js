@@ -10,12 +10,6 @@ const client = redis.createClient({
   database: parseInt(process.env.REDIS_DB) || 0
 });
 
-console.log('Redis configuration:');
-console.log('REDIS_HOST:', process.env.REDIS_HOST);
-console.log('REDIS_PORT:', process.env.REDIS_PORT);
-console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? '***' : 'not set');
-console.log('REDIS_DB:', process.env.REDIS_DB);
-
 const connectRedis = async () => {
   try {
     // Set up event listeners before connecting
