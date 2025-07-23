@@ -92,13 +92,6 @@ jobs:
         
         echo "Both services are accessible!"
     
-    - name: Run database migrations (if needed)
-      run: |
-        # Create any required database schema/tables if your services need them
-        echo "Setting up database schema..."
-        # Add your migration commands here if needed
-        # Example: PGPASSWORD=mypassword psql -h localhost -U myuser -d taskflow -f schema.sql
-    
     - name: Install dependencies and run tests
       env:
         # Service environment variables matching your .env file
@@ -190,7 +183,7 @@ jobs:
         echo "=================="
         cd frontend
         npm ci
-        npm run test || {
+        npm run test:run || {
           echo "❌ Frontend tests failed"
           exit 1
         }
