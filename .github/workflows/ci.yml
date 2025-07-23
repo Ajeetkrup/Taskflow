@@ -49,11 +49,16 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         cache-dependency-path: |
           services/*/package-lock.json
           frontend/package-lock.json
+
+    - name: Install Redis client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client redis-tools valkey-redis-compat
     
     - name: Wait for services to be ready
       run: |
@@ -64,17 +69,12 @@ jobs:
         done
         echo "PostgreSQL is ready!"
         
-        # echo "Waiting for Redis to be ready..."
-        # until redis-cli -h localhost -p 6379 ping; do
-        #   echo "Redis is unavailable - sleeping"
-        #   sleep 1
-        # done
-        # echo "Redis is ready!"
-    
-    - name: Install PostgreSQL client
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client redis-tools
+        echo "Waiting for Redis to be ready..."
+        until redis-cli -h localhost -p 6379 ping; do
+          echo "Redis is unavailable - sleeping"
+          sleep 1
+        done
+        echo "Redis is ready!"
     
     - name: Verify database connection
       run: |
