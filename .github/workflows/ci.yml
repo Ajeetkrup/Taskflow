@@ -64,12 +64,12 @@ jobs:
         done
         echo "PostgreSQL is ready!"
         
-        echo "Waiting for Redis to be ready..."
-        until redis-cli -h localhost -p 6379 ping; do
-          echo "Redis is unavailable - sleeping"
-          sleep 1
-        done
-        echo "Redis is ready!"
+        # echo "Waiting for Redis to be ready..."
+        # until redis-cli -h localhost -p 6379 ping; do
+        #   echo "Redis is unavailable - sleeping"
+        #   sleep 1
+        # done
+        # echo "Redis is ready!"
     
     - name: Install PostgreSQL client
       run: |
