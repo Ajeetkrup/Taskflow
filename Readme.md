@@ -65,6 +65,9 @@ TaskFlow is a comprehensive task management solution that allows users to:
 
 ```
 taskflow/
+├── .github/                           # GitHub configuration
+│   └── workflows/                     # GitHub Actions workflows
+│       └── ci.yml                     # CI/CD pipeline configuration
 ├── services/                          # Backend microservices
 │   ├── user-service/                  # Authentication & user management
 │   ├── task-service/                  # Task CRUD operations
@@ -198,22 +201,9 @@ aws eks update-kubeconfig --region us-west-2 --name taskflow-cluster
 - [x] Grafana monitoring dashboards
 - [x] GitHub Actions CI/CD pipeline
 
-### Phase 3: Advanced Features (Planned)
+### Phase 2: Advanced Features (Planned)
 - [ ] ArgoCD GitOps setup
 - [ ] Enhanced security measures
-
-## 🧪 Testing
-
-```bash
-# Run unit tests for all services
-./scripts/test-all.sh
-
-# Run integration tests
-npm run test:integration
-
-# Run e2e tests
-npm run test:e2e
-```
 
 ## 📈 Monitoring & Observability
 
