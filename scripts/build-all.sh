@@ -3,6 +3,8 @@ set -e
 
 echo "Building TaskFlow Docker images..."
 
+export DOCKER_USERNAME=ajeetkrup1234
+
 # Check if DOCKER_USERNAME is set
 if [ -z "$DOCKER_USERNAME" ]; then
     echo "Error: DOCKER_USERNAME environment variable is not set"
