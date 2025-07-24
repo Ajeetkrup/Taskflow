@@ -8,28 +8,59 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    
+    # Enhanced CORS configuration - more permissive
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,Accept,Origin,X-Forwarded-For,X-Forwarded-Proto,X-Forwarded-Host"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "1728000"
+    
+    # Additional security and compatibility headers
     nginx.ingress.kubernetes.io/configuration-snippet: |
       # Redirect requests without trailing slash
       rewrite ^(/grafana)$ $1/ redirect;
       rewrite ^(/prometheus)$ $1/ redirect;
       
-      # Additional headers for Grafana
+      # Headers for better browser compatibility
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      
+      # Additional headers for Grafana and Prometheus
       proxy_set_header Accept-Encoding "";
       proxy_set_header X-Forwarded-Host $host;
       proxy_set_header X-Forwarded-Server $host;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
-    # Enhanced CORS configuration
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "http://a5bfaa3b2e48047f18ccfdad4d8589ed-761cc3edb90c97ea.elb.us-west-2.amazonaws.com, http://taskflow.local"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
-    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,Accept,Origin,X-Forwarded-For"
-    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    nginx.ingress.kubernetes.io/cors-max-age: "1728000"
+      proxy_set_header X-Real-IP $remote_addr;
+      
+      # Handle preflight OPTIONS requests
+      if ($request_method = 'OPTIONS') {
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,Accept,Origin,X-Forwarded-For' always;
+        add_header 'Access-Control-Max-Age' 1728000 always;
+        add_header 'Content-Type' 'text/plain charset=UTF-8' always;
+        add_header 'Content-Length' 0 always;
+        return 204;
+      }
+
 spec:
   rules:
     - http:
         paths:
+          # Health check endpoint
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+                  
           # Monitoring/Metrics endpoints (Prometheus scraping via ingress)
           - path: /metrics/user
             pathType: Prefix
@@ -114,6 +145,24 @@ spec:
                 name: notification-service
                 port:
                   number: 3000
+          
+          # Static assets - handle with specific MIME types
+          - path: /assets
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+          
+          # Static files (JS, CSS, images, fonts)
+          - path: /(.*\.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|eot))
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
           
           # Frontend routes (last to catch all non-API routes)
           - path: /

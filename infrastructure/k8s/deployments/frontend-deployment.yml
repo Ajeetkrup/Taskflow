@@ -14,10 +14,10 @@ spec:
         app: frontend
     spec:
       tolerations:
-      - key: "layer"
-        operator: "Equal"
-        value: "application"
-        effect: "NoSchedule"
+        - key: "layer"
+          operator: "Equal"
+          value: "application"
+          effect: "NoSchedule"
       nodeSelector:
         layer: "application"
       containers:
@@ -25,13 +25,20 @@ spec:
           image: ajeetkrup1234/taskflow-frontend:latest
           ports:
             - containerPort: 80
+              name: http
           env:
             # Vite environment variables (build-time)
             - name: VITE_API_BASE_URL
               value: "http://a5bfaa3b2e48047f18ccfdad4d8589ed-761cc3edb90c97ea.elb.us-west-2.amazonaws.com/"
-            # Runtime environment variables (if using runtime config)
+            # Runtime environment variables
             - name: NODE_ENV
               value: "production"
+            - name: NGINX_ENTRYPOINT_QUIET_LOGS
+              value: "1"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
           resources:
             requests:
               memory: "64Mi"
@@ -43,11 +50,32 @@ spec:
             httpGet:
               path: /health
               port: 80
+              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
               port: 80
+              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Startup probe to handle slow container starts
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx-config
+            defaultMode: 0644

@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+  namespace: taskflow
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Include mime types
+        include /etc/nginx/mime.types;
+
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always; 
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        # Static assets with proper MIME types
+        location ~* \.(js|jsx|mjs)$ {
+            try_files $uri =404;
+            add_header Content-Type "application/javascript; charset=utf-8" always;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+
+        location ~* \.(css)$ {
+            try_files $uri =404;
+            add_header Content-Type "text/css; charset=utf-8" always;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+
+        location ~* \.(png|jpg|jpeg|gif|ico|svg|webp)$ {
+            try_files $uri =404;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+        }
+
+        location ~* \.(woff|woff2|ttf|eot)$ {
+            try_files $uri =404;
+            add_header Cache-Control "public, max-age=31536000, immutable" always;
+            add_header Access-Control-Allow-Origin "*" always;
+        }
+
+        # Assets directory
+        location /assets/ {
+            try_files $uri =404;
+            expires 1y;
+            add_header Cache-Control "public, immutable" always;
+            
+            # Ensure proper MIME types for assets
+            location ~* /assets/.*\.js$ {
+                add_header Content-Type "application/javascript; charset=utf-8" always;
+            }
+            location ~* /assets/.*\.css$ {
+                add_header Content-Type "text/css; charset=utf-8" always;
+            }
+        }
+
+        # API routes - don't handle here, let ingress handle
+        location /api/ {
+            return 404;
+        }
+
+        # Health check
+        location /health {
+            return 200 "OK";
+            add_header Content-Type text/plain;
+        }
+
+        # Handle React Router - serve index.html for all other routes
+        location / {
+            try_files $uri $uri/ /index.html;
+            add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            add_header Pragma "no-cache" always;
+            add_header Expires "0" always;
+        }
+
+        # Fallback for 404 errors
+        error_page 404 /index.html;
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-service
+  namespace: taskflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend-service
+  template:
+    metadata:
+      labels:
+        app: frontend-service
+    spec:
+      containers:
+      - name: frontend
+        image: your-frontend-image:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: frontend-nginx-config
