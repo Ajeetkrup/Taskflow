@@ -1,11 +1,10 @@
 # Multi-stage build for React frontend
-FROM node:24-alpine as build
-
+FROM node:24-alpine AS build
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -28,11 +27,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy mime.types to ensure proper MIME type handling
 COPY --from=nginx:alpine /etc/nginx/mime.types /etc/nginx/mime.types
 
-# Create a non-root user
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
-
-# Set proper permissions
+# Handle existing nginx user/group properly
+# The nginx:alpine image already has nginx user and group
+# Just ensure proper permissions without recreating them
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
@@ -40,6 +37,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 
+# Switch to non-root user
 USER nginx
 
 EXPOSE 80
